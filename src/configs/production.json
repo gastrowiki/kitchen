@@ -1,23 +1,19 @@
 {
-  "env": "production",
-  "dbConfig": {
-    "host": "localhost",
-    "user": "root",
-    "password": "password",
-    "database": "test",
-    "port": 5432,
-    "pool": {
-      "min": 0,
-      "max": 5
+    "env": "production",
+    "dbConfig": {
+        "host": "localhost",
+        "user": "root",
+        "password": "password",
+        "database": "test",
+        "port": 3306
+    },
+    "secretKey": "secretKey",
+    "log": {
+        "format": "combined",
+        "dir": "../logs"
+    },
+    "cors": {
+        "origin": "your.domain.com",
+        "credentials": true
     }
-  },
-  "secretKey": "secretKey",
-  "log": {
-    "format": "combined",
-    "dir": "../logs"
-  },
-  "cors": {
-    "origin": "your.domain.com",
-    "credentials": true
-  }
 }

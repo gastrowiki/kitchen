@@ -1,39 +1,13 @@
-import { Sequelize, DataTypes, Model, Optional } from 'sequelize';
+import { Model, ModelObject } from 'objection';
 import { User } from '@interfaces/users.interface';
 
-export type UserCreationAttributes = Optional<User, 'id' | 'email' | 'password'>;
+export class Users extends Model implements User {
+  id!: number;
+  email!: string;
+  password!: string;
 
-export class UserModel extends Model<User, UserCreationAttributes> implements User {
-  public id: number;
-  public email: string;
-  public password: string;
-
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  static tableName = 'users'; // database table name
+  static idColumn = 'id'; // id column name
 }
 
-export default function (sequelize: Sequelize): typeof UserModel {
-  UserModel.init(
-    {
-      id: {
-        autoIncrement: true,
-        primaryKey: true,
-        type: DataTypes.INTEGER,
-      },
-      email: {
-        allowNull: false,
-        type: DataTypes.STRING(45),
-      },
-      password: {
-        allowNull: false,
-        type: DataTypes.STRING(255),
-      },
-    },
-    {
-      tableName: 'users',
-      sequelize,
-    },
-  );
-
-  return UserModel;
-}
+export type UsersShape = ModelObject<Users>;

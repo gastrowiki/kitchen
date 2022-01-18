@@ -4,8 +4,4 @@ export interface dbConfig {
   password: string;
   database: string;
   port: number;
-  pool: {
-    min: number;
-    max: number;
-  };
 }
