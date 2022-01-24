@@ -5,7 +5,7 @@ import { dbConfig } from './src/interfaces/db.interface';
 
 const { host, user, password, database, port }: dbConfig = config.get('dbConfig');
 export = {
-  client: 'mysql',
+  client: 'postgresql',
   connection: {
     charset: 'utf8',
     timezone: 'UTC',
