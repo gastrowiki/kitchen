@@ -68,10 +68,8 @@ CREATE TABLE public.addresses (
   validated boolean DEFAULT false NOT NULL,
   latitude double precision,
   longitude double precision,
-  user_id uuid,
+  user_id uuid REFERENCES public.users(id) ON DELETE CASCADE,
   PRIMARY KEY (id)
-  CONSTRAINT addresses_user_fk FOREIGN KEY(user_id)
-    REFERENCES public.users(id) ON DELETE CASCADE
 )
 CREATE TRIGGER set_public_addresses_updated_at
   BEFORE UPDATE ON public.addresses
@@ -151,25 +149,13 @@ CREATE TABLE public.media (
   description jsonb DEFAULT '{}'::jsonb NOT NULL,
   "order" integer DEFAULT 0 NOT NULL,
   type varchar(255),
-  equipment_id uuid,
-  ingredient_id uuid
-  method_id uuid,
-  recipe_id uuid,
-  recipe_step_id uuid,
-  user_id uuid NOT NULL,
+  equipment_id uuid REFERENCES public.equipment(id) ON DELETE SET NULL,
+  ingredient_id uuid REFERENCES public.ingredients(id) ON DELETE SET NULL,
+  method_id uuid REFERENCES public.methods(id) ON DELETE SET NULL,
+  recipe_id uuid REFERENCES public.recipes(id) ON DELETE SET NULL,
+  recipe_step_id uuid REFERENCES public.recipe_steps(id) ON DELETE SET NULL,
+  user_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
   PRIMARY KEY (id)
-  CONSTRAINT media_equipment_fk FOREIGN KEY(equipment_id)
-    REFERENCES public.equipment(id) ON DELETE SET NULL
-  CONSTRAINT media_ingredient_fk FOREIGN KEY(ingredient_id)
-    REFERENCES public.ingredients(id) ON DELETE SET NULL
-  CONSTRAINT media_method_fk FOREIGN KEY(method_id)
-    REFERENCES public.methods(id) ON DELETE SET NULL
-  CONSTRAINT media_recipe_fk FOREIGN KEY(recipe_id)
-    REFERENCES public.recipes(id) ON DELETE SET NULL
-  CONSTRAINT media_recipe_step_fk FOREIGN KEY(recipe_step_id)
-    REFERENCES public.recipe_steps(id) ON DELETE SET NULL
-  CONSTRAINT media_user_fk FOREIGN KEY(user_id)
-    REFERENCES public.users(id) ON DELETE CASCADE
 );
 CREATE TRIGGER set_public_media_updated_at
   BEFORE UPDATE ON public.media
