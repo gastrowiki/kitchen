@@ -30,6 +30,7 @@ CREATE TABLE public.users (
   bio jsonb DEFAULT '{}'::jsonb NOT NULL,
   picture_id uuid,
   birthdate date,
+  languages character(2)[] NOT NULL,
   encrypted_password: varchar(255) NOT NULL,
   is_deleted boolean DEFAULT false NOT NULL,
   is_deleted_at timestamp with time zone,
@@ -70,7 +71,7 @@ CREATE TABLE public.addresses (
   longitude double precision,
   user_id uuid REFERENCES public.users(id) ON DELETE CASCADE,
   PRIMARY KEY (id)
-)
+);
 CREATE TRIGGER set_public_addresses_updated_at
   BEFORE UPDATE ON public.addresses
   FOR EACH ROW EXECUTE FUNCTION public.set_current_timestamp_updated_at();
@@ -78,18 +79,11 @@ ALTER TABLE public.users
   ADD CONSTRAINT users_legal_address_fk FOREIGN KEY(legal_address_id)
     REFERENCES public.addresses(id) ON DELETE SET NULL;
 
-CREATE TABLE public.languages (
-  code varchar(2) NOT NULL,
-  name varchar(255) NOT NULL,
-  iso_name varchar(255) NOT NULL,
-  public boolean DEFAULT false NOT NULL
-  PRIMARY KEY (code)
-);
-
 CREATE TABLE public.equipment (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
   created_at timestamp with time zone DEFAULT now() NOT NULL,
   updated_at timestamp with time zone DEFAULT now() NOT NULL,
+  languages character(2)[] NOT NULL,
   title jsonb DEFAULT '{}'::jsonb NOT NULL,
   description jsonb DEFAULT '{}'::jsonb NOT NULL,
   affiliate_links jsonb DEFAULT '{}'::jsonb NOT NULL,
@@ -103,6 +97,7 @@ CREATE TABLE public.methods (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
   created_at timestamp with time zone DEFAULT now() NOT NULL,
   updated_at timestamp with time zone DEFAULT now() NOT NULL,
+  languages character(2)[] NOT NULL,
   title jsonb DEFAULT '{}'::jsonb NOT NULL,
   description jsonb DEFAULT '{}'::jsonb NOT NULL,
   warning jsonb DEFAULT '{}'::jsonb NOT NULL,
@@ -115,19 +110,16 @@ CREATE TRIGGER set_public_methods_updated_at
 
 CREATE TABLE public.method_equipment (
   created_at timestamp with time zone DEFAULT now() NOT NULL,
-  method_id uuid NOT NULL,
-  equipment_id uuid NOT NULL
+  method_id uuid NOT NULL REFERENCES public.methods(id) ON DELETE CASCADE,
+  equipment_id uuid NOT NULL REFERENCES public.equipment(id) ON DELETE CASCADE,
   PRIMARY KEY (method_id, equipment_id)
-  CONSTRAINT method_equipment_equipment_fk FOREIGN KEY(equipment_id)
-    REFERENCES public.equipment(id) ON DELETE CASCADE
-  CONSTRAINT method_equipment_method_fk FOREIGN KEY(method_id)
-    REFERENCES public.methods(id) ON DELETE CASCADE
 );
 
 CREATE TABLE public.ingredients (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
   created_at timestamp with time zone DEFAULT now() NOT NULL,
   updated_at timestamp with time zone DEFAULT now() NOT NULL
+  languages character(2)[] NOT NULL,
   title jsonb DEFAULT '{}'::jsonb NOT NULL,
   description jsonb DEFAULT '{}'::jsonb NOT NULL,
   PRIMARY KEY (id)
@@ -149,6 +141,7 @@ CREATE TABLE public.media (
   description jsonb DEFAULT '{}'::jsonb NOT NULL,
   "order" integer DEFAULT 0 NOT NULL,
   type varchar(255),
+  languages character(2)[] NOT NULL,
   equipment_id uuid REFERENCES public.equipment(id) ON DELETE SET NULL,
   ingredient_id uuid REFERENCES public.ingredients(id) ON DELETE SET NULL,
   method_id uuid REFERENCES public.methods(id) ON DELETE SET NULL,
@@ -164,69 +157,65 @@ ALTER TABLE ONLY public.users
   ADD CONSTRAINT users_picture_id_fk FOREIGN KEY (picture_id)
   REFERENCES public.media(id) ON DELETE SET NULL;
 
-CREATE TABLE public.recipe_step_equipment (
-  recipe_step_id uuid NOT NULL,
-  equipment_id uuid NOT NULL,
-  count integer DEFAULT 1 NOT NULL,
-  recipe_id uuid NOT NULL
-);
-CREATE TABLE public.recipe_step_ingredients (
-  ingrediant_id uuid NOT NULL,
-  recipe_step_id uuid NOT NULL,
-  weight integer,
-  volume integer,
-  count integer,
-  recipe_id uuid NOT NULL,
-  CONSTRAINT "At least one unit of measure" CHECK (((weight > 0) OR (volume > 0) OR (count > 0)))
-);
 CREATE TABLE public.recipe_steps (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
   created_at timestamp with time zone DEFAULT now() NOT NULL,
   updated_at timestamp with time zone DEFAULT now() NOT NULL,
   recipe_id uuid NOT NULL,
   path public.ltree NOT NULL,
-  description jsonb,
-  method_id uuid
+  title jsonb DEFAULT '{}'::jsonb NOT NULL,
+  description jsonb DEFAULT '{}'::jsonb NOT NULL,
+  duration integer DEFAULT 0 NOT NULL,
+  method_id uuid REFERENCES methods(id) ON DELETE SET NULL,
+  PRIMARY KEY (id)
 );
+CREATE TRIGGER set_public_recipe_steps_updated_at
+  BEFORE UPDATE ON public.recipe_steps
+  FOR EACH ROW EXECUTE FUNCTION public.set_current_timestamp_updated_at();
+
+CREATE TABLE public.recipe_step_equipment (
+  recipe_step_id uuid NOT NULL REFERENCES recipe_steps(id) ON DELETE CASCADE,
+  equipment_id uuid NOT NULL REFERENCES equipment(id) ON DELETE CASCADE,
+  count integer DEFAULT 1 NOT NULL,
+  recipe_id uuid NOT NULL,
+  PRIMARY KEY (recipe_step_id, equipment_id)
+);
+
+CREATE TABLE public.recipe_step_ingredients (
+  ingrediant_id uuid NOT NULL REFERENCES ingredients(id) ON DELETE CASCADE,
+  recipe_step_id uuid NOT NULL REFERENCES recipe_steps(id) ON DELETE CASCADE,
+  weight integer,
+  volume integer,
+  count integer,
+  recipe_id uuid NOT NULL,
+  PRIMARY KEY (ingrediant_id, recipe_step_id),
+  CONSTRAINT "At least one unit of measure" CHECK (((weight > 0) OR (volume > 0) OR (count > 0)))
+);
+
 CREATE TABLE public.recipes (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
   created_at timestamp with time zone DEFAULT now() NOT NULL,
   updated_at timestamp with time zone DEFAULT now() NOT NULL,
-  title jsonb NOT NULL,
-  description jsonb,
-  thumbnail text,
-  teaser jsonb,
+  title jsonb DEFAULT '{}'::jsonb NOT NULL,
+  description jsonb DEFAULT '{}'::jsonb NOT NULL,
+  teaser jsonb DEFAULT '{}'::jsonb NOT NULL,
   languages character(2)[] NOT NULL,
-  user_id uuid NOT NULL
+  duration integer DEFAULT 0 NOT NULL,
+  user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  PRIMARY KEY (id)
 );
-
-ALTER TABLE ONLY public.recipe_step_equipment
-  ADD CONSTRAINT recipe_step_equipment_pkey PRIMARY KEY (recipe_step_id, equipment_id);
-ALTER TABLE ONLY public.recipe_step_ingredients
-  ADD CONSTRAINT recipe_step_ingredients_pkey PRIMARY KEY (ingrediant_id, recipe_step_id);
+CREATE TRIGGER set_public_recipes_updated_at
+  BEFORE UPDATE ON public.recipes
+  FOR EACH ROW EXECUTE FUNCTION public.set_current_timestamp_updated_at();
 ALTER TABLE ONLY public.recipe_steps
-  ADD CONSTRAINT recipe_steps_pkey PRIMARY KEY (id);
+  ADD CONSTRAINT recipe_steps_recipe_id_fkey FOREIGN KEY (recipe_id)
+  REFERENCES public.recipes(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.recipe_step_equipment
+  ADD CONSTRAINT recipe_step_equipment_recipe_id_fkey FOREIGN KEY (recipe_id)
+  REFERENCES public.recipes(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.recipe_step_ingredients
+  ADD CONSTRAINT recipe_step_ingredients_recipe_id_fkey FOREIGN KEY (recipe_id)
+  REFERENCES public.recipes(id) ON DELETE CASCADE;
 ALTER TABLE ONLY public.recipes
-  ADD CONSTRAINT recipes_pkey PRIMARY KEY (id);
-CREATE TRIGGER set_public_recipe_steps_updated_at BEFORE UPDATE ON public.recipe_steps FOR EACH ROW EXECUTE FUNCTION public.set_current_timestamp_updated_at();
-COMMENT ON TRIGGER set_public_recipe_steps_updated_at ON public.recipe_steps IS 'trigger to set value of column "updated_at" to current timestamp on row update';
-CREATE TRIGGER set_public_recipes_updated_at BEFORE UPDATE ON public.recipes FOR EACH ROW EXECUTE FUNCTION public.set_current_timestamp_updated_at();
-COMMENT ON TRIGGER set_public_recipes_updated_at ON public.recipes IS 'trigger to set value of column "updated_at" to current timestamp on row update';
-ALTER TABLE ONLY public.recipe_step_equipment
-  ADD CONSTRAINT recipe_step_equipment_equipment_id_fkey FOREIGN KEY (equipment_id) REFERENCES public.equipment(id) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE ONLY public.recipe_step_equipment
-  ADD CONSTRAINT recipe_step_equipment_recipe_id_fkey FOREIGN KEY (recipe_id) REFERENCES public.recipes(id) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE ONLY public.recipe_step_equipment
-  ADD CONSTRAINT recipe_step_equipment_recipe_step_id_fkey FOREIGN KEY (recipe_step_id) REFERENCES public.recipe_steps(id) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE ONLY public.recipe_step_ingredients
-  ADD CONSTRAINT recipe_step_ingredients_ingrediant_id_fkey FOREIGN KEY (ingrediant_id) REFERENCES public.ingredients(id) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE ONLY public.recipe_step_ingredients
-  ADD CONSTRAINT recipe_step_ingredients_recipe_id_fkey FOREIGN KEY (recipe_id) REFERENCES public.recipes(id) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE ONLY public.recipe_step_ingredients
-  ADD CONSTRAINT recipe_step_ingredients_recipe_step_id_fkey FOREIGN KEY (recipe_step_id) REFERENCES public.recipe_steps(id) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE ONLY public.recipe_steps
-  ADD CONSTRAINT recipe_steps_method_id_fkey FOREIGN KEY (method_id) REFERENCES public.methods(id) ON UPDATE SET NULL ON DELETE SET NULL;
-ALTER TABLE ONLY public.recipe_steps
-  ADD CONSTRAINT recipe_steps_recipe_id_fkey FOREIGN KEY (recipe_id) REFERENCES public.recipes(id) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE ONLY public.recipes
-  ADD CONSTRAINT recipes_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON UPDATE SET NULL ON DELETE SET NULL;
+  ADD CONSTRAINT recipes_user_id_fkey FOREIGN KEY (user_id)
+  REFERENCES public.users(id) ON DELETE SET NULL;
