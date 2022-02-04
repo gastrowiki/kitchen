@@ -31,7 +31,7 @@ CREATE TABLE public.users (
   picture_id uuid,
   birthdate date,
   languages character(2)[] NOT NULL,
-  encrypted_password: varchar(255) NOT NULL,
+  encrypted_password varchar(255) NOT NULL,
   is_deleted boolean DEFAULT false NOT NULL,
   is_deleted_at timestamp with time zone,
   is_banned boolean DEFAULT false NOT NULL,
@@ -118,7 +118,7 @@ CREATE TABLE public.method_equipment (
 CREATE TABLE public.ingredients (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
   created_at timestamp with time zone DEFAULT now() NOT NULL,
-  updated_at timestamp with time zone DEFAULT now() NOT NULL
+  updated_at timestamp with time zone DEFAULT now() NOT NULL,
   languages character(2)[] NOT NULL,
   title jsonb DEFAULT '{}'::jsonb NOT NULL,
   description jsonb DEFAULT '{}'::jsonb NOT NULL,
@@ -145,8 +145,8 @@ CREATE TABLE public.media (
   equipment_id uuid REFERENCES public.equipment(id) ON DELETE SET NULL,
   ingredient_id uuid REFERENCES public.ingredients(id) ON DELETE SET NULL,
   method_id uuid REFERENCES public.methods(id) ON DELETE SET NULL,
-  recipe_id uuid REFERENCES public.recipes(id) ON DELETE SET NULL,
-  recipe_step_id uuid REFERENCES public.recipe_steps(id) ON DELETE SET NULL,
+  recipe_id uuid,
+  recipe_step_id uuid,
   user_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
   PRIMARY KEY (id)
 );
@@ -172,6 +172,9 @@ CREATE TABLE public.recipe_steps (
 CREATE TRIGGER set_public_recipe_steps_updated_at
   BEFORE UPDATE ON public.recipe_steps
   FOR EACH ROW EXECUTE FUNCTION public.set_current_timestamp_updated_at();
+ALTER TABLE ONLY public.media
+  ADD CONSTRAINT media_recipe_steps_id_fkey FOREIGN KEY (recipe_step_id)
+  REFERENCES public.recipe_steps(id) ON DELETE SET NULL;
 
 CREATE TABLE public.recipe_step_equipment (
   recipe_step_id uuid NOT NULL REFERENCES recipe_steps(id) ON DELETE CASCADE,
@@ -216,6 +219,6 @@ ALTER TABLE ONLY public.recipe_step_equipment
 ALTER TABLE ONLY public.recipe_step_ingredients
   ADD CONSTRAINT recipe_step_ingredients_recipe_id_fkey FOREIGN KEY (recipe_id)
   REFERENCES public.recipes(id) ON DELETE CASCADE;
-ALTER TABLE ONLY public.recipes
-  ADD CONSTRAINT recipes_user_id_fkey FOREIGN KEY (user_id)
-  REFERENCES public.users(id) ON DELETE SET NULL;
+ALTER TABLE ONLY public.media
+  ADD CONSTRAINT media_recipe_id_fkey FOREIGN KEY (recipe_id)
+  REFERENCES public.recipes(id) ON DELETE CASCADE;
