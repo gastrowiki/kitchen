@@ -17,7 +17,7 @@ CREATE TABLE public.languages (
   oauth_providers jsonb DEFAULT '{}'::jsonb NOT NULL,
   public boolean NOT NULL DEFAULT false,
   PRIMARY KEY (code)
-)
+);
 
 CREATE TABLE public.users (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -239,5 +239,5 @@ ALTER TABLE ONLY public.media
 CREATE TABLE public.recipes_languages (
   recipe_id uuid REFERENCES public.recipes(id) ON DELETE CASCADE,
   language_code varchar(2) NOT NULL REFERENCES public.languages(code) ON DELETE CASCADE,
-  PRIMARY KEY (user_id, language_code)
+  PRIMARY KEY (recipe_id, language_code)
 );
