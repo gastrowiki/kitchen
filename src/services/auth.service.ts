@@ -1,13 +1,15 @@
 import { sign } from 'jsonwebtoken';
-import { CreateUserDto, LoginUserDto } from '@dtos/users.dto';
+import { LoginUserDto } from '@dtos/users.dto';
 import { HttpException } from '@exceptions/HttpException';
 import { DataStoredInToken, TokenData } from '@interfaces/auth.interface';
 import { User } from '@interfaces/user.interface';
 import * as UserModal from '@models/user.model';
 import { isEmpty } from '@utils/util';
 
-export const signup = async (userData: CreateUserDto): Promise<User> => {
-  if (isEmpty(userData)) throw new HttpException(400, "You're not userData");
+export const signup = async (userData: UserModal.ICreatePayload): Promise<User> => {
+  if (userData.password !== userData.password_verification) {
+    throw new HttpException(422, 'Passwords do not match');
+  }
   const findUser = await UserModal.findByEmail(userData.email);
   if (findUser) throw new HttpException(409, `You're email ${userData.email} already exists`);
   return UserModal.create(userData);

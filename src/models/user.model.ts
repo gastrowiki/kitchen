@@ -2,16 +2,20 @@ import { User } from '@interfaces/user.interface';
 import { CreateUserDto } from '@dtos/users.dto';
 import { pgQuery } from 'db';
 
-export const create = async ({ email, password, givenName, familyName }: CreateUserDto): Promise<User> => {
+export interface ICreatePayload extends CreateUserDto {
+  languages: string[];
+}
+
+export const create = async ({ username, email, password, givenName, familyName, languages }: ICreatePayload): Promise<User> => {
   const {
     rows: [user],
   } = await pgQuery(
     `
-    INSERT INTO users (email, password, given_name, family_name)
-    VALUES ($1, crypt($2, gen_salt('bf')), $3, $4)
+    INSERT INTO users (username, email, encrypted_password, given_name, family_name, languages)
+    VALUES ($1, $2, crypt($3, gen_salt('bf')), $4, $5, $6)
     RETURNING *
   `,
-    [email, password, givenName, familyName],
+    [username, email, password, givenName, familyName, languages],
   );
   return user;
 };
