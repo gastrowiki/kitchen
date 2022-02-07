@@ -12,8 +12,7 @@ export const signUp = async (req: Request, res: Response, next: NextFunction): P
       languages.push('en');
     }
     const signUpUserData: User = await AuthService.signup({ ...userData, languages });
-
-    res.status(201).json({ data: signUpUserData, message: 'signup' });
+    res.status(201).json(signUpUserData);
   } catch (error) {
     next(error);
   }
