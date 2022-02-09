@@ -23,7 +23,7 @@ export const logIn = async (req: Request, res: Response, next: NextFunction): Pr
     const userData: CreateUserDto = req.body;
     const { cookie, user } = await AuthService.login(userData);
     res.setHeader('Set-Cookie', [cookie]);
-    res.status(200).json({ data: user, message: 'login' });
+    res.status(200).json(user);
   } catch (error) {
     next(error);
   }

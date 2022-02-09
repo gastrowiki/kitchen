@@ -17,7 +17,7 @@ export const signup = async (userData: UserModal.ICreatePayload): Promise<User> 
 
 export const login = async (userData: LoginUserDto): Promise<{ cookie: string; user: User }> => {
   if (isEmpty(userData)) throw new HttpException(400, "You're not userData");
-  const user = await UserModal.findByUserPass(userData.email, userData.password);
+  const user = await UserModal.findByLoginCredentials(userData.username, userData.password);
   if (!user) throw new HttpException(409, 'Your login information is not correct. Please try again.');
   const tokenData = createToken(user);
   const cookie = createCookie(tokenData);
