@@ -58,9 +58,9 @@ class App {
   private initializeRoutes() {
     const indexRoutes = new IndexRoute();
     const usersRoutes = new UsersRoute();
-    this.app.use('/', indexRoutes.router);
-    this.app.use('/', usersRoutes.router);
-    this.app.use('/', AuthRoute);
+    this.app.use('/api/v1', indexRoutes.router);
+    this.app.use('/api/v1', usersRoutes.router);
+    this.app.use('/api/v1', AuthRoute);
   }
 
   private initializeSwagger() {
