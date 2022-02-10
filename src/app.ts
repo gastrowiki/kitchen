@@ -13,7 +13,6 @@ import errorMiddleware from '@middlewares/error.middleware';
 import { logger, stream } from '@utils/logger';
 import AuthRoute from '@routes/auth.route';
 import IndexRoute from '@routes/index.route';
-import UsersRoute from '@routes/users.route';
 
 class App {
   public app: express.Application;
@@ -57,9 +56,7 @@ class App {
 
   private initializeRoutes() {
     const indexRoutes = new IndexRoute();
-    const usersRoutes = new UsersRoute();
-    this.app.use('/api/v1', indexRoutes.router);
-    this.app.use('/api/v1', usersRoutes.router);
+    this.app.use('/', indexRoutes.router);
     this.app.use('/api/v1', AuthRoute);
   }
 

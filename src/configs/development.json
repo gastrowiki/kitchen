@@ -5,7 +5,7 @@
         "dir": "../logs"
     },
     "cors": {
-        "origin": true,
-        "credentials": true
+        "origin": false,
+        "credentials": false
     }
 }
