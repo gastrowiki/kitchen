@@ -30,8 +30,8 @@ const createToken = (user: User) => {
   expirationDate.setDate(expirationDate.getDate() + 1); // 1 day
   const dataStoredInToken: DataStoredInToken = {
     iss: 'gastro.wiki',
-    exp: expirationDate.getUTCMilliseconds(),
-    iat: new Date().getUTCMilliseconds(),
+    exp: expirationDate.getTime(),
+    iat: new Date().getTime(),
     given_name: user.given_name,
     family_name: user.family_name,
     preferred_username: user.username,
@@ -42,7 +42,12 @@ const createToken = (user: User) => {
   return sign(dataStoredInToken, secretKey);
 };
 
-const createCookie = (token: string): string =>
-  process.env.NODE_ENV === 'production'
-    ? `Authorization=${token}; HttpOnly; Max-Age=86400; Secure; SameSite=Strict`
-    : `Authorization=${token}; HttpOnly; Max-Age=86400`;
+const createCookie = (token: string): string => {
+  const expirationDate = new Date();
+  expirationDate.setDate(expirationDate.getDate() + 1); // 1 day
+  let cookie = `Authorization=${token}; HttpOnly; Expires=${expirationDate.toUTCString()};`;
+  if (process.env.NODE_ENV === 'production') {
+    cookie += ` Secure; SameSite=Strict`;
+  }
+  return cookie;
+};
