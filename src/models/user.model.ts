@@ -21,9 +21,20 @@ export const create = async ({ username, email, password, givenName, familyName,
   return user as User;
 };
 
-export const findByEmail = async (email: string) => {
-  const rows = await pgQuery('SELECT * FROM users WHERE email = $1', [email]);
-  return rows[0];
+export const findByEmail = async (id: string) => {
+  const result = await pgQuery(
+    `
+    SELECT id, given_name, middle_name, family_name, languages, username FROM users
+    WHERE email = $1
+    AND is_banned = false
+    AND is_deleted = false
+  `,
+    [id],
+  );
+  if (result.rowCount === 0) {
+    return null;
+  }
+  return result.rows[0] as User;
 };
 
 export const findById = async (id: string) => {
@@ -31,6 +42,22 @@ export const findById = async (id: string) => {
     `
     SELECT id, given_name, middle_name, family_name, languages, username FROM users
     WHERE id = $1
+    AND is_banned = false
+    AND is_deleted = false
+  `,
+    [id],
+  );
+  if (result.rowCount === 0) {
+    return null;
+  }
+  return result.rows[0] as User;
+};
+
+export const findByUsername = async (id: string) => {
+  const result = await pgQuery(
+    `
+    SELECT id, given_name, middle_name, family_name, languages, username FROM users
+    WHERE username = $1
     AND is_banned = false
     AND is_deleted = false
   `,

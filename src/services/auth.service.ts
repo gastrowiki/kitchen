@@ -1,17 +1,20 @@
 import { sign } from 'jsonwebtoken';
-import { LoginUserDto } from '@dtos/users.dto';
-import { HttpException } from '@exceptions/HttpException';
-import { DataStoredInToken } from '@interfaces/auth.interface';
-import { User } from '@interfaces/user.interface';
+
 import * as UserModal from '@models/user.model';
+import { DataStoredInToken } from '@interfaces/auth.interface';
+import { HttpException } from '@exceptions/HttpException';
+import { LoginUserDto } from '@dtos/users.dto';
+import { TOP_PASSWORDS } from '@utils/password';
+import { User } from '@interfaces/user.interface';
 import { isEmpty } from '@utils/util';
 
 export const signup = async (userData: UserModal.ICreatePayload): Promise<User> => {
-  if (userData.password !== userData.password_verification) {
-    throw new HttpException(422, 'Passwords do not match');
+  // most of the validation is done in users.dto.ts
+  if (TOP_PASSWORDS.includes(userData.password)) {
+    throw new HttpException(422, 'Password is too common', { password: 'Password is too common' });
   }
   const findUser = await UserModal.findByEmail(userData.email);
-  if (findUser) throw new HttpException(409, `You're email ${userData.email} already exists`);
+  if (findUser) throw new HttpException(409, `Your email ${userData.email} already exists`);
   return UserModal.create(userData);
 };
 
@@ -50,4 +53,10 @@ const createCookie = (token: string): string => {
     cookie += ` Secure; SameSite=Strict`;
   }
   return cookie;
+};
+
+export const usernameAvailability = async (username: string) => {
+  const user = await UserModal.findByUsername(username);
+  if (user) throw new HttpException(409, `The username ${username} already exists`);
+  return true;
 };
