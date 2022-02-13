@@ -21,6 +21,36 @@ export const create = async ({ username, email, password, givenName, familyName,
   return user as User;
 };
 
+export const updatePassword = async (id: string, password: string) => {
+  const {
+    rows: [user],
+  } = await pgQuery(
+    `
+    UPDATE users
+    SET encrypted_password = crypt($1, gen_salt('bf'))
+    WHERE id = $2
+    RETURNING id, username, email, given_name, family_name, languages
+  `,
+    [password, id],
+  );
+  return user as User;
+};
+
+export const addResetToken = async (id: string, token: string) => {
+  const {
+    rows: [user],
+  } = await pgQuery(
+    `
+    UPDATE users
+    SET reset_password_token = $1, reset_token_expires_at = NOW() + INTERVAL '1 hour'
+    WHERE id = $2
+    RETURNING id, username, email, given_name, family_name, languages
+  `,
+    [token, id],
+  );
+  return user as User;
+};
+
 export const findByEmail = async (id: string) => {
   const result = await pgQuery(
     `

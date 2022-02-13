@@ -51,6 +51,8 @@ CREATE TABLE public.users (
   favorite_count integer DEFAULT 0 NOT NULL,
   permissions jsonb DEFAULT '{}'::jsonb NOT NULL,
   commission_rate real DEFAULT 0.7 NOT NULL,
+  reset_token_expires_at timestamp with time zone,
+  reset_password_token varchar(255),
   verified boolean DEFAULT false NOT NULL,
   PRIMARY KEY (id)
 );

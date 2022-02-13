@@ -54,4 +54,6 @@ export interface User {
   picture?: string;
   username: string;
   website?: string;
+  reset_password_token?: string;
+  reset_token_expires_at?: Date;
 }

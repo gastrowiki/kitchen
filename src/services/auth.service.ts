@@ -3,7 +3,7 @@ import { sign } from 'jsonwebtoken';
 import * as UserModal from '@models/user.model';
 import { DataStoredInToken } from '@interfaces/auth.interface';
 import { HttpException } from '@exceptions/HttpException';
-import { LoginUserDto } from '@dtos/users.dto';
+import { LoginUserDto, ResetPasswordDto } from '@dtos/users.dto';
 import { TOP_PASSWORDS } from '@utils/password';
 import { User } from '@interfaces/user.interface';
 import { isEmpty } from '@utils/util';
@@ -59,4 +59,32 @@ export const usernameAvailability = async (username: string) => {
   const user = await UserModal.findByUsername(username);
   if (user) throw new HttpException(409, `The username ${username} already exists`);
   return true;
+};
+
+const generateResetToken = () => {
+  const buf = Buffer.alloc(16);
+  for (let i = 0; i < buf.length; i++) {
+    buf[i] = Math.floor(Math.random() * 256);
+  }
+  const id = buf.toString('base64');
+  return id;
+};
+
+export const forgotPassword = async (email: string) => {
+  const user = await UserModal.findByEmail(email);
+  if (!user) throw new HttpException(404, `${email} isn't in our system. Try creating an account!`);
+  const resetToken = generateResetToken();
+  UserModal.addResetToken(user.id, resetToken);
+  return resetToken;
+};
+
+export const resetPassword = async ({ email, password, token }: ResetPasswordDto) => {
+  if (TOP_PASSWORDS.includes(password)) {
+    throw new HttpException(422, 'Password is too common', { password: 'Password is too common' });
+  }
+  const user = await UserModal.findByEmail(email);
+  if (!user || token !== user.reset_password_token) throw new HttpException(404, 'This reset link is not valid. Try again.');
+  const expiredToken = new Date().getTime() > user.reset_token_expires_at.getTime();
+  if (expiredToken) throw new HttpException(409, 'This reset link is expired. Try again.');
+  return UserModal.updatePassword(user.id, password);
 };

@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import acceptLanguageHeaderParser from 'accept-language-parser';
 
 import * as AuthService from '@services/auth.service';
-import { CreateUserDto, LoginUserDto } from '@dtos/users.dto';
+import { CreateUserDto, LoginUserDto, ResetPasswordDto } from '@dtos/users.dto';
 import { User } from '@interfaces/user.interface';
 import { lowercaseCredentials } from '@utils/password';
 
@@ -34,8 +34,30 @@ export const logIn = async (req: Request, res: Response, next: NextFunction): Pr
 export const usernameAvailability = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const username = req.query.username as string;
-    await AuthService.usernameAvailability(username);
-    res.status(200).json({ available: true });
+    await AuthService.usernameAvailability(username.toLowerCase());
+    res.status(200).json({ success: true });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const forgotPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { email } = lowercaseCredentials(req.body);
+    const resetToken = await AuthService.forgotPassword(email);
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?email=${email}&token=${resetToken}`;
+    console.log(resetUrl);
+    res.status(200).json({ success: true });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const resetPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const resetInfo: ResetPasswordDto = lowercaseCredentials(req.body);
+    await AuthService.resetPassword(resetInfo);
+    res.status(200).json({ success: true });
   } catch (error) {
     next(error);
   }
