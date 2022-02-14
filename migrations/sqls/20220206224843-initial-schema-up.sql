@@ -12,6 +12,13 @@ CREATE FUNCTION public.set_current_timestamp_updated_at()
     END;
   $$;
 
+CREATE TABLE public.languages (
+  code varchar(2) NOT NULL,
+  oauth_providers jsonb DEFAULT '{}'::jsonb NOT NULL,
+  public boolean NOT NULL DEFAULT false,
+  PRIMARY KEY (code)
+);
+
 CREATE TABLE public.users (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
   created_at timestamp with time zone DEFAULT now() NOT NULL,
@@ -44,12 +51,20 @@ CREATE TABLE public.users (
   favorite_count integer DEFAULT 0 NOT NULL,
   permissions jsonb DEFAULT '{}'::jsonb NOT NULL,
   commission_rate real DEFAULT 0.7 NOT NULL,
+  reset_token_expires_at timestamp with time zone,
+  reset_password_token varchar(255),
   verified boolean DEFAULT false NOT NULL,
   PRIMARY KEY (id)
 );
 CREATE TRIGGER set_public_users_updated_at
   BEFORE UPDATE ON public.users
   FOR EACH ROW EXECUTE FUNCTION public.set_current_timestamp_updated_at();
+
+CREATE TABLE public.users_languages (
+  user_id uuid REFERENCES public.users(id) ON DELETE CASCADE,
+  language_code varchar(2) NOT NULL REFERENCES public.languages(code) ON DELETE CASCADE,
+  PRIMARY KEY (user_id, language_code)
+);
 
 CREATE TABLE public.addresses (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -222,3 +237,9 @@ ALTER TABLE ONLY public.recipe_step_ingredients
 ALTER TABLE ONLY public.media
   ADD CONSTRAINT media_recipe_id_fkey FOREIGN KEY (recipe_id)
   REFERENCES public.recipes(id) ON DELETE CASCADE;
+
+CREATE TABLE public.recipes_languages (
+  recipe_id uuid REFERENCES public.recipes(id) ON DELETE CASCADE,
+  language_code varchar(2) NOT NULL REFERENCES public.languages(code) ON DELETE CASCADE,
+  PRIMARY KEY (recipe_id, language_code)
+);

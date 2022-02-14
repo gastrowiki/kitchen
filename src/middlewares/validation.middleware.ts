@@ -3,23 +3,24 @@ import { validate, ValidationError } from 'class-validator';
 import { RequestHandler } from 'express';
 import { HttpException } from '@exceptions/HttpException';
 
-const validationMiddleware = (
+export const validateRequestData = (
   type: any,
   value: string | 'body' | 'query' | 'params' = 'body',
   skipMissingProperties = false,
   whitelist = true,
   forbidNonWhitelisted = true,
 ): RequestHandler => {
-  return (req, res, next) => {
+  return (req, _, next) => {
     validate(plainToClass(type, req[value]), { skipMissingProperties, whitelist, forbidNonWhitelisted }).then((errors: ValidationError[]) => {
       if (errors.length > 0) {
-        const message = errors.map((error: ValidationError) => Object.values(error.constraints)).join(', ');
-        next(new HttpException(400, message));
+        const fieldErrors = errors.reduce((FEs, error: ValidationError) => {
+          const errorMessage = Object.values(error.constraints).join(', ');
+          return { ...FEs, [error.property]: errorMessage };
+        }, {});
+        next(new HttpException(400, 'Something is wrong with the data you entered.', fieldErrors));
       } else {
         next();
       }
     });
   };
 };
-
-export default validationMiddleware;

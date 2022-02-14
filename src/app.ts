@@ -9,22 +9,23 @@ import hpp from 'hpp';
 import morgan from 'morgan';
 import swaggerJSDoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
-import { Routes } from '@interfaces/routes.interface';
 import errorMiddleware from '@middlewares/error.middleware';
 import { logger, stream } from '@utils/logger';
+import AuthRoute from '@routes/auth.route';
+import IndexRoute from '@routes/index.route';
 
 class App {
   public app: express.Application;
   public port: string | number;
   public env: string;
 
-  constructor(routes: Routes[]) {
+  constructor() {
     this.app = express();
     this.port = process.env.PORT || 3000;
     this.env = process.env.NODE_ENV || 'development';
 
     this.initializeMiddlewares();
-    this.initializeRoutes(routes);
+    this.initializeRoutes();
     this.initializeSwagger();
     this.initializeErrorHandling();
   }
@@ -53,10 +54,10 @@ class App {
     this.app.use(cookieParser());
   }
 
-  private initializeRoutes(routes: Routes[]) {
-    routes.forEach(route => {
-      this.app.use('/', route.router);
-    });
+  private initializeRoutes() {
+    const indexRoutes = new IndexRoute();
+    this.app.use('/', indexRoutes.router);
+    this.app.use('/api/v1', AuthRoute);
   }
 
   private initializeSwagger() {

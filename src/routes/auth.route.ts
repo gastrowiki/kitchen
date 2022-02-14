@@ -1,24 +1,15 @@
 import { Router } from 'express';
-import AuthController from '@controllers/auth.controller';
-import { CreateUserDto } from '@dtos/users.dto';
-import { Routes } from '@interfaces/routes.interface';
-import authMiddleware from '@middlewares/auth.middleware';
-import validationMiddleware from '@middlewares/validation.middleware';
+import { signUp, logIn, logOut, getUser, forgotPassword, resetPassword, usernameAvailability } from '@controllers/auth.controller';
+import { CreateUserDto, LoginUserDto, ResetPasswordDto, UsernameAvailabilityDto, ForgotPasswordDto } from '@dtos/users.dto';
+import { validateRequestData, verifyUser } from 'middlewares';
 
-class AuthRoute implements Routes {
-  public path = '/';
-  public router = Router();
-  public authController = new AuthController();
+const AuthRouter = Router();
+AuthRouter.get('/logout', verifyUser, logOut);
+AuthRouter.get('/me', verifyUser, getUser);
+AuthRouter.get('/username-availability', validateRequestData(UsernameAvailabilityDto, 'query'), usernameAvailability);
+AuthRouter.post('/forgot-password', validateRequestData(ForgotPasswordDto, 'body'), forgotPassword);
+AuthRouter.post('/login', validateRequestData(LoginUserDto, 'body'), logIn);
+AuthRouter.post('/reset-password', validateRequestData(ResetPasswordDto, 'body'), resetPassword);
+AuthRouter.post('/signup', validateRequestData(CreateUserDto, 'body'), signUp);
 
-  constructor() {
-    this.initializeRoutes();
-  }
-
-  private initializeRoutes() {
-    this.router.post(`${this.path}signup`, validationMiddleware(CreateUserDto, 'body'), this.authController.signUp);
-    this.router.post(`${this.path}login`, validationMiddleware(CreateUserDto, 'body'), this.authController.logIn);
-    this.router.post(`${this.path}logout`, authMiddleware, this.authController.logOut);
-  }
-}
-
-export default AuthRoute;
+export default AuthRouter;

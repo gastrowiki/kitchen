@@ -1,62 +1,81 @@
-import { hash, compare } from 'bcrypt';
 import { sign } from 'jsonwebtoken';
-import { CreateUserDto } from '@dtos/users.dto';
+import { createHash } from 'crypto';
+
+import * as UserModal from '@models/user.model';
+import { DataStoredInToken } from '@interfaces/auth.interface';
 import { HttpException } from '@exceptions/HttpException';
-import { DataStoredInToken, TokenData } from '@interfaces/auth.interface';
+import { LoginUserDto, ResetPasswordDto } from '@dtos/users.dto';
+import { TOP_PASSWORDS } from '@utils/password';
 import { User } from '@interfaces/user.interface';
-import userModel from '@models/users.model';
 import { isEmpty } from '@utils/util';
 
-class AuthService {
-  public users = userModel;
-
-  public async signup(userData: CreateUserDto): Promise<User> {
-    if (isEmpty(userData)) throw new HttpException(400, "You're not userData");
-
-    const findUser: User = this.users.find(user => user.email === userData.email);
-    if (findUser) throw new HttpException(409, `You're email ${userData.email} already exists`);
-
-    const hashedPassword = await hash(userData.password, 10);
-    const createUserData: User = { id: this.users.length + 1, ...userData, password: hashedPassword };
-
-    return createUserData;
+export const signup = async (userData: UserModal.ICreatePayload) => {
+  // most of the validation is done in users.dto.ts
+  if (TOP_PASSWORDS.includes(userData.password)) {
+    throw new HttpException(422, 'Password is too common', { password: 'Password is too common' });
   }
+  const findUser = await UserModal.findByEmail(userData.email);
+  if (findUser) throw new HttpException(409, `Your email ${userData.email} already exists`);
+  const user = await UserModal.create(userData);
+  const token = createToken(user);
+  return { token, user };
+};
 
-  public async login(userData: CreateUserDto): Promise<{ cookie: string; findUser: User }> {
-    if (isEmpty(userData)) throw new HttpException(400, "You're not userData");
+export const login = async (userData: LoginUserDto) => {
+  if (isEmpty(userData)) throw new HttpException(400, "You're not userData");
+  const user = await UserModal.findByLoginCredentials(userData.username, userData.password);
+  if (!user) throw new HttpException(409, 'Your login information is not correct. Please try again.');
+  const token = createToken(user);
+  return { token, user };
+};
 
-    const findUser: User = this.users.find(user => user.email === userData.email);
-    if (!findUser) throw new HttpException(409, `You're email ${userData.email} not found`);
+const createToken = (user: User) => {
+  const secretKey = process.env.AUTH_SECRET;
+  const expirationDate = new Date();
+  expirationDate.setDate(expirationDate.getDate() + 1); // 1 day
+  const dataStoredInToken: DataStoredInToken = {
+    iss: 'gastro.wiki',
+    exp: expirationDate.getTime(),
+    iat: new Date().getTime(),
+    given_name: user.given_name,
+    family_name: user.family_name,
+    preferred_username: user.username,
+    sub: user.id,
+    languages: user.languages,
+  };
+  return sign(dataStoredInToken, secretKey);
+};
 
-    const isPasswordMatching: boolean = await compare(userData.password, findUser.password);
-    if (!isPasswordMatching) throw new HttpException(409, "You're password not matching");
+export const usernameAvailability = async (username: string) => {
+  const user = await UserModal.findByUsername(username);
+  if (user) throw new HttpException(409, `The username ${username} already exists`);
+  return true;
+};
 
-    const tokenData = this.createToken(findUser);
-    const cookie = this.createCookie(tokenData);
-
-    return { cookie, findUser };
+const generateResetToken = () => {
+  const buf = Buffer.alloc(16);
+  for (let i = 0; i < buf.length; i++) {
+    buf[i] = Math.floor(Math.random() * 256);
   }
+  const id = buf.toString('base64');
+  return createHash('md5').update(id).digest('hex');
+};
 
-  public async logout(userData: User): Promise<User> {
-    if (isEmpty(userData)) throw new HttpException(400, "You're not userData");
+export const forgotPassword = async (email: string) => {
+  const user = await UserModal.findByEmail(email);
+  if (!user) throw new HttpException(404, `${email} isn't in our system. Try creating an account!`);
+  const resetToken = generateResetToken();
+  UserModal.addResetToken(user.id, resetToken);
+  return resetToken;
+};
 
-    const findUser: User = this.users.find(user => user.email === userData.email && user.password === userData.password);
-    if (!findUser) throw new HttpException(409, "You're not user");
-
-    return findUser;
+export const resetPassword = async ({ email, password, token }: ResetPasswordDto) => {
+  if (TOP_PASSWORDS.includes(password)) {
+    throw new HttpException(422, 'Password is too common', { password: 'Password is too common' });
   }
-
-  public createToken(user: User): TokenData {
-    const dataStoredInToken: DataStoredInToken = { id: user.id };
-    const secretKey: string = process.env.AUTH_SECRET;
-    const expiresIn: number = 60 * 60;
-
-    return { expiresIn, token: sign(dataStoredInToken, secretKey, { expiresIn }) };
-  }
-
-  public createCookie(tokenData: TokenData): string {
-    return `Authorization=${tokenData.token}; HttpOnly; Max-Age=${tokenData.expiresIn};`;
-  }
-}
-
-export default AuthService;
+  const user = await UserModal.findFullUserByEmail(email);
+  if (!user || token !== user.reset_password_token) throw new HttpException(404, 'This reset link is not valid. Try again.');
+  const expiredToken = new Date().getTime() > user.reset_token_expires_at.getTime();
+  if (expiredToken) throw new HttpException(409, 'This reset link is expired. Try again.');
+  return UserModal.updatePassword(user.id, password);
+};

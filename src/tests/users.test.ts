@@ -1,8 +1,8 @@
 import request from 'supertest';
 import App from '@/app';
 import { CreateUserDto } from '@dtos/users.dto';
-import { User } from '@interfaces/users.interface';
-import userModel from '@models/users.model';
+import { User } from '@interfaces/user.interface';
+import userModel from '@models/user.model';
 import UserRoute from '@routes/users.route';
 
 afterAll(async () => {
