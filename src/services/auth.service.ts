@@ -1,4 +1,5 @@
 import { sign } from 'jsonwebtoken';
+import { createHash } from 'crypto';
 
 import * as UserModal from '@models/user.model';
 import { DataStoredInToken } from '@interfaces/auth.interface';
@@ -8,23 +9,24 @@ import { TOP_PASSWORDS } from '@utils/password';
 import { User } from '@interfaces/user.interface';
 import { isEmpty } from '@utils/util';
 
-export const signup = async (userData: UserModal.ICreatePayload): Promise<User> => {
+export const signup = async (userData: UserModal.ICreatePayload) => {
   // most of the validation is done in users.dto.ts
   if (TOP_PASSWORDS.includes(userData.password)) {
     throw new HttpException(422, 'Password is too common', { password: 'Password is too common' });
   }
   const findUser = await UserModal.findByEmail(userData.email);
   if (findUser) throw new HttpException(409, `Your email ${userData.email} already exists`);
-  return UserModal.create(userData);
+  const user = await UserModal.create(userData);
+  const token = createToken(user);
+  return { token, user };
 };
 
-export const login = async (userData: LoginUserDto): Promise<{ cookie: string; user: User }> => {
+export const login = async (userData: LoginUserDto) => {
   if (isEmpty(userData)) throw new HttpException(400, "You're not userData");
   const user = await UserModal.findByLoginCredentials(userData.username, userData.password);
   if (!user) throw new HttpException(409, 'Your login information is not correct. Please try again.');
   const token = createToken(user);
-  const cookie = createCookie(token);
-  return { cookie, user };
+  return { token, user };
 };
 
 const createToken = (user: User) => {
@@ -41,18 +43,7 @@ const createToken = (user: User) => {
     sub: user.id,
     languages: user.languages,
   };
-
   return sign(dataStoredInToken, secretKey);
-};
-
-const createCookie = (token: string): string => {
-  const expirationDate = new Date();
-  expirationDate.setDate(expirationDate.getDate() + 1); // 1 day
-  let cookie = `Authorization=${token}; HttpOnly; Expires=${expirationDate.toUTCString()};`;
-  if (process.env.NODE_ENV === 'production') {
-    cookie += ` Secure; SameSite=Strict`;
-  }
-  return cookie;
 };
 
 export const usernameAvailability = async (username: string) => {
@@ -67,7 +58,7 @@ const generateResetToken = () => {
     buf[i] = Math.floor(Math.random() * 256);
   }
   const id = buf.toString('base64');
-  return id;
+  return createHash('md5').update(id).digest('hex');
 };
 
 export const forgotPassword = async (email: string) => {
@@ -82,7 +73,7 @@ export const resetPassword = async ({ email, password, token }: ResetPasswordDto
   if (TOP_PASSWORDS.includes(password)) {
     throw new HttpException(422, 'Password is too common', { password: 'Password is too common' });
   }
-  const user = await UserModal.findByEmail(email);
+  const user = await UserModal.findFullUserByEmail(email);
   if (!user || token !== user.reset_password_token) throw new HttpException(404, 'This reset link is not valid. Try again.');
   const expiredToken = new Date().getTime() > user.reset_token_expires_at.getTime();
   if (expiredToken) throw new HttpException(409, 'This reset link is expired. Try again.');

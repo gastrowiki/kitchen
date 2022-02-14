@@ -67,6 +67,21 @@ export const findByEmail = async (id: string) => {
   return result.rows[0] as User;
 };
 
+export const findFullUserByEmail = async (id: string) => {
+  const result = await pgQuery(
+    `
+    SELECT * FROM users
+    WHERE email = $1
+    AND is_deleted = false
+  `,
+    [id],
+  );
+  if (result.rowCount === 0) {
+    return null;
+  }
+  return result.rows[0] as User;
+};
+
 export const findById = async (id: string) => {
   const result = await pgQuery(
     `

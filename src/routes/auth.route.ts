@@ -1,13 +1,15 @@
 import { Router } from 'express';
-import { signUp, logIn, forgotPassword, resetPassword, usernameAvailability } from '@controllers/auth.controller';
+import { signUp, logIn, logOut, getUser, forgotPassword, resetPassword, usernameAvailability } from '@controllers/auth.controller';
 import { CreateUserDto, LoginUserDto, ResetPasswordDto, UsernameAvailabilityDto, ForgotPasswordDto } from '@dtos/users.dto';
-import validationMiddleware from '@middlewares/validation.middleware';
+import { validateRequestData, verifyUser } from 'middlewares';
 
 const AuthRouter = Router();
-AuthRouter.post('/signup', validationMiddleware(CreateUserDto, 'body'), signUp);
-AuthRouter.post('/login', validationMiddleware(LoginUserDto, 'body'), logIn);
-AuthRouter.get('/username-availability', validationMiddleware(UsernameAvailabilityDto, 'query'), usernameAvailability);
-AuthRouter.post('/forgot-password', validationMiddleware(ForgotPasswordDto, 'body'), forgotPassword);
-AuthRouter.post('/reset-password', validationMiddleware(ResetPasswordDto, 'body'), resetPassword);
+AuthRouter.get('/logout', verifyUser, logOut);
+AuthRouter.get('/me', verifyUser, getUser);
+AuthRouter.get('/username-availability', validateRequestData(UsernameAvailabilityDto, 'query'), usernameAvailability);
+AuthRouter.post('/forgot-password', validateRequestData(ForgotPasswordDto, 'body'), forgotPassword);
+AuthRouter.post('/login', validateRequestData(LoginUserDto, 'body'), logIn);
+AuthRouter.post('/reset-password', validateRequestData(ResetPasswordDto, 'body'), resetPassword);
+AuthRouter.post('/signup', validateRequestData(CreateUserDto, 'body'), signUp);
 
 export default AuthRouter;

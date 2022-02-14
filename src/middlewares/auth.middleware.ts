@@ -1,5 +1,5 @@
 import passport from 'passport';
-import { Request } from 'express'
+import { Request } from 'express';
 import { Strategy as JwtStrategy } from 'passport-jwt';
 
 import * as UserModel from '@models/user.model';
@@ -26,15 +26,13 @@ passport.use(
     },
     async (jwt_payload: DataStoredInToken, done) => {
       try {
-        console.log(jwt_payload);
         const user = await UserModel.findById(jwt_payload.sub);
         return done(null, user || false);
       } catch (error) {
-        console.log(error);
         return done(error, false);
       }
     },
   ),
 );
 
-export default passport.authenticate('jwt', { session: false });
+export const verifyUser = passport.authenticate('jwt', { session: false });
