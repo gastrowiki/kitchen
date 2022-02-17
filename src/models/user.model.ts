@@ -21,53 +21,27 @@ export const create = async ({ username, email, password, givenName, familyName,
   return user as User;
 };
 
-export const updatePassword = async (id: string, password: string) => {
-  const {
-    rows: [user],
-  } = await pgQuery(
+export const updatePassword = async (id: string, password: string) =>
+  pgQuery(
     `
     UPDATE users
     SET encrypted_password = crypt($1, gen_salt('bf'))
     WHERE id = $2
-    RETURNING id, username, email, given_name, family_name, languages
   `,
     [password, id],
   );
-  return user as User;
-};
 
-export const addResetToken = async (id: string, token: string) => {
-  const {
-    rows: [user],
-  } = await pgQuery(
+export const addResetToken = async (id: string, token: string) =>
+  pgQuery(
     `
-    UPDATE users
-    SET reset_password_token = $1, reset_token_expires_at = NOW() + INTERVAL '1 hour'
-    WHERE id = $2
-    RETURNING id, username, email, given_name, family_name, languages
+  UPDATE users
+  SET reset_password_token = $1, reset_token_expires_at = NOW() + INTERVAL '1 hour'
+  WHERE id = $2
   `,
     [token, id],
   );
-  return user as User;
-};
 
 export const findByEmail = async (id: string) => {
-  const result = await pgQuery(
-    `
-    SELECT id, given_name, middle_name, family_name, languages, username FROM users
-    WHERE email = $1
-    AND is_banned = false
-    AND is_deleted = false
-  `,
-    [id],
-  );
-  if (result.rowCount === 0) {
-    return null;
-  }
-  return result.rows[0] as User;
-};
-
-export const findFullUserByEmail = async (id: string) => {
   const result = await pgQuery(
     `
     SELECT * FROM users
@@ -85,9 +59,8 @@ export const findFullUserByEmail = async (id: string) => {
 export const findById = async (id: string) => {
   const result = await pgQuery(
     `
-    SELECT id, given_name, middle_name, family_name, languages, username FROM users
+    SELECT * FROM users
     WHERE id = $1
-    AND is_banned = false
     AND is_deleted = false
   `,
     [id],
@@ -117,7 +90,7 @@ export const findByUsername = async (id: string) => {
 export const findByLoginCredentials = async (username: string, password: string) => {
   const result = await pgQuery(
     `
-    SELECT id, given_name, middle_name, family_name, languages, username FROM users
+    SELECT id, given_name, middle_name, family_name, email, languages, username FROM users
     WHERE (username = $1 OR email = $1)
     AND is_banned = false
     AND is_deleted = false

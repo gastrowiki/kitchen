@@ -39,7 +39,8 @@ const createToken = (user: User) => {
     iat: new Date().getTime(),
     given_name: user.given_name,
     family_name: user.family_name,
-    preferred_username: user.username,
+    email: user.email,
+    username: user.username,
     sub: user.id,
     languages: user.languages,
   };
@@ -73,7 +74,7 @@ export const resetPassword = async ({ email, password, token }: ResetPasswordDto
   if (TOP_PASSWORDS.includes(password)) {
     throw new HttpException(422, 'Password is too common', { password: 'Password is too common' });
   }
-  const user = await UserModal.findFullUserByEmail(email);
+  const user = await UserModal.findByEmail(email);
   if (!user || token !== user.reset_password_token) throw new HttpException(404, 'This reset link is not valid. Try again.');
   const expiredToken = new Date().getTime() > user.reset_token_expires_at.getTime();
   if (expiredToken) throw new HttpException(409, 'This reset link is expired. Try again.');

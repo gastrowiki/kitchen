@@ -6,10 +6,11 @@ export interface DataStoredInToken {
   sub: string;
   exp: number;
   iat: number;
+  email: string;
   given_name: string;
   family_name: string;
-  preferred_username: string;
   languages: string[];
+  username: string;
 }
 
 export interface RequestWithUser extends Request {
