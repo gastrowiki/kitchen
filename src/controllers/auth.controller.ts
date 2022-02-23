@@ -2,8 +2,11 @@ import { NextFunction, Request, Response } from 'express';
 import acceptLanguageHeaderParser from 'accept-language-parser';
 
 import * as AuthService from '@services/auth.service';
+import * as AddressService from '@services/address.service';
 import { CreateUserDto, LoginUserDto, ResetPasswordDto } from '@dtos/users.dto';
+import { RequestWithUser } from '@interfaces/auth.interface';
 import { lowercaseCredentials } from '@utils/password';
+import { pickUserProfileAttributes } from '@utils/user.utils';
 
 export const signUp = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -12,6 +15,7 @@ export const signUp = async (req: Request, res: Response, next: NextFunction): P
     if (languages.length === 0) {
       languages.push('en');
     }
+    console.log(languages, req.headers['accept-language']);
     const { token, user } = await AuthService.signup({ ...userData, languages });
     res.cookie('Authorization', token, {
       httpOnly: true,
@@ -82,9 +86,14 @@ export const resetPassword = async (req: Request, res: Response, next: NextFunct
   }
 };
 
-export const getUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const getUserProfile = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
   try {
-    res.status(200).json(req.user);
+    const profile = pickUserProfileAttributes(req.user);
+    if (req.user.legal_address_id) {
+      const address = await AddressService.findById(req.user.legal_address_id);
+      profile.address = address;
+    }
+    res.status(200).json(profile);
   } catch (error) {
     next(error);
   }

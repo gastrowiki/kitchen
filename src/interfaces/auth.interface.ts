@@ -7,9 +7,12 @@ export interface DataStoredInToken {
   exp: number;
   iat: number;
   email: string;
-  given_name: string;
   family_name: string;
+  favorite_count?: number;
+  given_name: string;
   languages: string[];
+  middle_name?: string;
+  picture?: string;
   username: string;
 }
 

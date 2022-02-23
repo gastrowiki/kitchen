@@ -28,7 +28,7 @@ export interface User {
   updated_at: Date;
   additional_info: AdditionalInfo;
   bio: TranslatedString;
-  address: Address;
+  address?: Address;
   birthdate?: Date;
   commission_rate: number;
   email: string;
@@ -57,3 +57,22 @@ export interface User {
   reset_password_token?: string;
   reset_token_expires_at?: Date;
 }
+
+export type PublicUserProfile = Omit<
+  User,
+  | 'id'
+  | 'created_at'
+  | 'updated_at'
+  | 'is_banned'
+  | 'is_banned_at'
+  | 'is_deleted'
+  | 'is_deleted_at'
+  | 'is_restricted'
+  | 'is_restricted_at'
+  | 'last_login'
+  | 'legal_address_id'
+  | 'oauth_providers'
+  | 'permissions'
+  | 'reset_password_token'
+  | 'reset_token_expires_at'
+>;

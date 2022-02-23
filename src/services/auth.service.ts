@@ -8,6 +8,7 @@ import { LoginUserDto, ResetPasswordDto } from '@dtos/users.dto';
 import { TOP_PASSWORDS } from '@utils/password';
 import { User } from '@interfaces/user.interface';
 import { isEmpty } from '@utils/util';
+import { pickUserProfileAttributes } from '@utils/user.utils';
 
 export const signup = async (userData: UserModal.ICreatePayload) => {
   // most of the validation is done in users.dto.ts
@@ -30,19 +31,22 @@ export const login = async (userData: LoginUserDto) => {
 };
 
 const createToken = (user: User) => {
-  const secretKey = process.env.AUTH_SECRET;
+  const secretKey = process.env.JWT_SECRET;
   const expirationDate = new Date();
   expirationDate.setDate(expirationDate.getDate() + 1); // 1 day
   const dataStoredInToken: DataStoredInToken = {
     iss: 'gastro.wiki',
+    sub: user.id,
     exp: expirationDate.getTime(),
     iat: new Date().getTime(),
-    given_name: user.given_name,
-    family_name: user.family_name,
     email: user.email,
-    username: user.username,
-    sub: user.id,
+    family_name: user.family_name,
+    favorite_count: user.favorite_count,
+    given_name: user.given_name,
     languages: user.languages,
+    middle_name: user.middle_name,
+    picture: user.picture,
+    username: user.username,
   };
   return sign(dataStoredInToken, secretKey);
 };

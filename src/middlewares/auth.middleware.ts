@@ -9,7 +9,7 @@ const jwtFromRequest = (req: Request) => {
   if (req.cookies.Authorization) {
     return req.cookies.Authorization;
   }
-  const authorization = req.headers.authorization;
+  const authorization = req.headers.authorization as string;
   if (authorization && authorization.split(' ')[0] === 'Bearer') {
     return authorization.split(' ')[1];
   }
@@ -20,7 +20,7 @@ passport.use(
   new JwtStrategy(
     {
       jwtFromRequest,
-      secretOrKey: process.env.AUTH_SECRET,
+      secretOrKey: process.env.JWT_SECRET,
       issuer: 'gastro.wiki',
       ignoreExpiration: true,
     },
