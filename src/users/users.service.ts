@@ -1,14 +1,12 @@
-import { sign } from 'jsonwebtoken';
+import isEmpty from 'lodash/isEmpty';
 import { createHash } from 'crypto';
+import { sign } from 'jsonwebtoken';
 
-import * as UserModal from '@models/user.model';
-import { DataStoredInToken } from '@interfaces/auth.interface';
-import { HttpException } from '@exceptions/HttpException';
-import { LoginUserDto, ResetPasswordDto } from '@dtos/users.dto';
-import { TOP_PASSWORDS } from '@utils/password';
-import { User } from '@interfaces/user.interface';
-import { isEmpty } from '@utils/util';
-import { pickUserProfileAttributes } from '@utils/user.utils';
+import * as UserModal from './users.model';
+import TOP_PASSWORDS from './enums/TOP_PASSWORDS';
+import { HttpException } from 'common';
+import { IDataStoredInToken, IUser } from 'common/types';
+import { LoginUserDto, ResetPasswordDto } from './users.dto';
 
 export const signup = async (userData: UserModal.ICreatePayload) => {
   // most of the validation is done in users.dto.ts
@@ -30,11 +28,11 @@ export const login = async (userData: LoginUserDto) => {
   return { token, user };
 };
 
-const createToken = (user: User) => {
+const createToken = (user: IUser) => {
   const secretKey = process.env.JWT_SECRET;
   const expirationDate = new Date();
   expirationDate.setDate(expirationDate.getDate() + 1); // 1 day
-  const dataStoredInToken: DataStoredInToken = {
+  const dataStoredInToken: IDataStoredInToken = {
     iss: 'gastro.wiki',
     sub: user.id,
     exp: expirationDate.getTime(),

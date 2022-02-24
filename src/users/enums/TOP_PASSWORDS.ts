@@ -1,4 +1,4 @@
-export const TOP_PASSWORDS = [
+export default [
   'password',
   '12345678',
   '123456789',
@@ -204,12 +204,3 @@ export const TOP_PASSWORDS = [
   '01011980',
   'freepass',
 ];
-
-const caseInsensitiveCreds = ['username', 'email'];
-export const lowercaseCredentials = <T>(userData: Record<string, string>) => {
-  const lowercaseUserData = {};
-  Object.keys(userData).forEach(key => {
-    lowercaseUserData[key] = caseInsensitiveCreds.includes(key) ? userData[key].toLowerCase() : userData[key];
-  });
-  return lowercaseUserData as T;
-};

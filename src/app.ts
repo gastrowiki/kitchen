@@ -1,16 +1,17 @@
 import '@/index';
 import compression from 'compression';
+import config from 'config';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
-import config from 'config';
 import express from 'express';
 import helmet from 'helmet';
 import hpp from 'hpp';
 import morgan from 'morgan';
-import errorMiddleware from '@middlewares/error.middleware';
-import { logger, stream } from '@utils/logger';
-import AuthRoute from '@routes/auth.route';
-import IndexRoute from '@routes/index.route';
+
+import { RootRoutes } from 'root';
+import { UserRoutes } from 'users';
+import { errorMiddleware } from 'middlewares';
+import { logger, stream } from 'common/utils/logger';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -25,12 +26,15 @@ app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(errorMiddleware);
 
 // routes
-const indexRoutes = new IndexRoute();
-app.use('/', indexRoutes.router);
-app.use('/api/v1', AuthRoute);
+app.use('/', RootRoutes);
+app.use('/api/v1', UserRoutes);
+
+// init after routes for field level validation
+app.use(errorMiddleware);
+
+export const getServer = () => app;
 
 export const startApp = () => {
   app.listen(port, () => {
@@ -42,6 +46,6 @@ export const startApp = () => {
     logger.info(`█  █▄▄█ █  ▄   █▄▄▄▄▄█ █ █   █ █   █  █ █       █`);
     logger.info(`█▄▄▄▄▄▄▄█▄█ █▄▄█▄▄▄▄▄▄▄█ █▄▄▄█ █▄▄▄█  █▄█▄▄▄▄▄▄▄█`);
     logger.info(` `);
-    logger.info(`   Listening on port ${port} in ${env} mode`);
+    logger.info(`Listening on ${process.env.FRONTEND_URL}:${process.env.PORT} in ${env} mode`);
   });
 };

@@ -1,7 +1,6 @@
-import { pgQuery } from 'db';
-
-import { CreateUserDto } from '@dtos/users.dto';
-import { User } from '@interfaces/user.interface';
+import { CreateUserDto } from './users.dto';
+import { IUser } from 'common/types';
+import { pgQuery } from 'common';
 
 export interface ICreatePayload extends CreateUserDto {
   languages: string[];
@@ -18,7 +17,7 @@ export const create = async ({ username, email, password, givenName, familyName,
   `,
     [username, email, password, givenName, familyName, languages],
   );
-  return user as User;
+  return user as IUser;
 };
 
 export const updatePassword = async (id: string, password: string) =>
@@ -53,7 +52,7 @@ export const findByEmail = async (id: string) => {
   if (result.rowCount === 0) {
     return null;
   }
-  return result.rows[0] as User;
+  return result.rows[0] as IUser;
 };
 
 export const findById = async (id: string) => {
@@ -68,7 +67,7 @@ export const findById = async (id: string) => {
   if (result.rowCount === 0) {
     return null;
   }
-  return result.rows[0] as User;
+  return result.rows[0] as IUser;
 };
 
 export const findByUsername = async (id: string) => {
@@ -84,7 +83,7 @@ export const findByUsername = async (id: string) => {
   if (result.rowCount === 0) {
     return null;
   }
-  return result.rows[0] as User;
+  return result.rows[0] as IUser;
 };
 
 export const findByLoginCredentials = async (username: string, password: string) => {
@@ -101,7 +100,7 @@ export const findByLoginCredentials = async (username: string, password: string)
   if (result.rowCount === 0) {
     return null;
   }
-  const user = result.rows[0] as User;
+  const user = result.rows[0] as IUser;
   pgQuery(`UPDATE users SET last_login = NOW() WHERE id = $1`, [user.id]);
   return user;
 };
