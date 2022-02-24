@@ -1,8 +1,12 @@
 {
   "name": "kitchen",
-  "version": "0.0.0",
-  "description": "TypeScript + Express API Server",
-  "author": "",
+  "version": "0.1.0",
+  "description": "The API for Gastro - A living history of the world's food written by its people",
+  "homepage": "https://gastro.wiki",
+  "private": false,
+  "bugs": {
+    "url": "https://github.com/gastrowiki/gastro-web/issues"
+  },
   "license": "ISC",
   "scripts": {
     "start": "npm run build && cross-env NODE_ENV=production node dist/server.js",
@@ -13,6 +17,10 @@
     "lint": "eslint --ignore-path .gitignore --ext .ts src/",
     "lint:fix": "npm run lint -- --fix",
     "migrate": "node ./node_modules/db-migrate/bin/db-migrate"
+  },
+  "engines": {
+    "node": "16.13.2",
+    "npm": "8.1.2"
   },
   "dependencies": {
     "accept-language-parser": "^1.5.0",
