@@ -1,4 +1,4 @@
-import '@/index';
+import 'index';
 import compression from 'compression';
 import config from 'config';
 import cookieParser from 'cookie-parser';
