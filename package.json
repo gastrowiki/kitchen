@@ -12,9 +12,7 @@
     "test": "jest --forceExit --detectOpenHandles",
     "lint": "eslint --ignore-path .gitignore --ext .ts src/",
     "lint:fix": "npm run lint -- --fix",
-    "migrate": "node ./node_modules/db-migrate/bin/db-migrate",
-    "deploy:prod": "npm run build && pm2 start ecosystem.config.js --only prod",
-    "deploy:dev": "pm2 start ecosystem.config.js --only dev"
+    "migrate": "node ./node_modules/db-migrate/bin/db-migrate"
   },
   "dependencies": {
     "accept-language-parser": "^1.5.0",
@@ -75,7 +73,6 @@
     "node-config": "^0.0.2",
     "node-gyp": "^8.1.0",
     "nodemon": "^2.0.9",
-    "pm2": "^5.1.0",
     "prettier": "^2.3.2",
     "supertest": "^6.1.3",
     "ts-jest": "^27.0.3",
