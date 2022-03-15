@@ -1,84 +1,51 @@
-import '@/index';
+import 'index';
 import compression from 'compression';
+import config from 'config';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
-import config from 'config';
 import express from 'express';
 import helmet from 'helmet';
 import hpp from 'hpp';
 import morgan from 'morgan';
-import swaggerJSDoc from 'swagger-jsdoc';
-import swaggerUi from 'swagger-ui-express';
-import errorMiddleware from '@middlewares/error.middleware';
-import { logger, stream } from '@utils/logger';
-import AuthRoute from '@routes/auth.route';
-import IndexRoute from '@routes/index.route';
 
-class App {
-  public app: express.Application;
-  public port: string | number;
-  public env: string;
+import { RootRoutes } from 'root';
+import { UserRoutes } from 'users';
+import { errorMiddleware } from 'middlewares';
+import { logger, stream } from 'common/utils/logger';
 
-  constructor() {
-    this.app = express();
-    this.port = process.env.PORT || 3000;
-    this.env = process.env.NODE_ENV || 'development';
+const app = express();
+const port = process.env.PORT || 3000;
+const env = process.env.NODE_ENV || 'development';
 
-    this.initializeMiddlewares();
-    this.initializeRoutes();
-    this.initializeSwagger();
-    this.initializeErrorHandling();
-  }
+// middlewares
+app.use(morgan(config.get('log.format'), { stream }));
+app.use(cors({ origin: config.get('cors.origin'), credentials: config.get('cors.credentials') }));
+app.use(hpp());
+app.use(helmet());
+app.use(compression());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
-  public listen() {
-    this.app.listen(this.port, () => {
-      logger.info(`=================================`);
-      logger.info(`======= ENV: ${this.env} =======`);
-      logger.info(`🚀 App listening on the port ${this.port}`);
-      logger.info(`=================================`);
-    });
-  }
+// routes
+app.use('/', RootRoutes);
+app.use('/api/v1', UserRoutes);
 
-  public getServer() {
-    return this.app;
-  }
+// init after routes for field level validation
+app.use(errorMiddleware);
 
-  private initializeMiddlewares() {
-    this.app.use(morgan(config.get('log.format'), { stream }));
-    this.app.use(cors({ origin: config.get('cors.origin'), credentials: config.get('cors.credentials') }));
-    this.app.use(hpp());
-    this.app.use(helmet());
-    this.app.use(compression());
-    this.app.use(express.json());
-    this.app.use(express.urlencoded({ extended: true }));
-    this.app.use(cookieParser());
-  }
+export const getServer = () => app;
 
-  private initializeRoutes() {
-    const indexRoutes = new IndexRoute();
-    this.app.use('/', indexRoutes.router);
-    this.app.use('/api/v1', AuthRoute);
-  }
-
-  private initializeSwagger() {
-    const options = {
-      swaggerDefinition: {
-        info: {
-          title: 'REST API',
-          version: '1.0.0',
-          description: 'Example docs',
-        },
-      },
-      apis: ['swagger.yaml'],
-    };
-
-    const specs = swaggerJSDoc(options);
-    this.app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
-  }
-
-  private initializeErrorHandling() {
-    this.app.use(errorMiddleware);
-  }
-}
-
-export default App;
+export const startApp = () => {
+  app.listen(port, () => {
+    logger.info(` ▄▄▄▄▄▄▄ ▄▄▄▄▄▄ ▄▄▄▄▄▄▄ ▄▄▄▄▄▄▄ ▄▄▄▄▄▄   ▄▄▄▄▄▄▄ `);
+    logger.info(`█       █      █       █       █   ▄  █ █       █`);
+    logger.info(`█   ▄▄▄▄█  ▄   █  ▄▄▄▄▄█▄     ▄█  █ █ █ █   ▄   █`);
+    logger.info(`█  █  ▄▄█ █▄█  █ █▄▄▄▄▄  █   █ █   █▄▄█▄█  █ █  █`);
+    logger.info(`█  █ █  █      █▄▄▄▄▄  █ █   █ █    ▄▄  █  █▄█  █`);
+    logger.info(`█  █▄▄█ █  ▄   █▄▄▄▄▄█ █ █   █ █   █  █ █       █`);
+    logger.info(`█▄▄▄▄▄▄▄█▄█ █▄▄█▄▄▄▄▄▄▄█ █▄▄▄█ █▄▄▄█  █▄█▄▄▄▄▄▄▄█`);
+    logger.info(` `);
+    logger.info(`Listening on ${process.env.FRONTEND_URL}:${process.env.PORT} in ${env} mode`);
+  });
+};

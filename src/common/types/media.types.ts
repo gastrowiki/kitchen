@@ -1,4 +1,4 @@
-export interface Media {
+export interface IMedia {
   id: string;
   created_at?: Date;
   updated_at?: Date;

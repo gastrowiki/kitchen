@@ -1,34 +1,35 @@
-import { Address } from './address.interface';
-import { ActiveLanguages, TranslatedString } from './language.interface';
+import { ActiveLanguages, TranslatedString } from './language.types';
+import { IAddress } from './address.types';
+import { Request } from 'express';
 
-export interface AdditionalInfo {
+export interface IAdditionalInfo {
   flexibleFutureStorage?: string;
 }
 
-export interface NotificationPreferences {
+export interface INotificationPreferences {
   email?: boolean;
   push?: boolean;
   sms?: boolean;
 }
 
-export interface OAuthProviders {
+export interface IOAuthProviders {
   facebook?: string;
   google?: string;
   twitter?: string;
   otp?: string;
 }
 
-export interface UserPermissions {
+export interface IUserPermissions {
   admin?: boolean;
 }
 
-export interface User {
+export interface IUser {
   id: string;
   created_at: Date;
   updated_at: Date;
-  additional_info: AdditionalInfo;
+  additional_info: IAdditionalInfo;
   bio: TranslatedString;
-  address: Address;
+  address?: IAddress;
   birthdate?: Date;
   commission_rate: number;
   email: string;
@@ -46,9 +47,9 @@ export interface User {
   last_login?: Date;
   legal_address_id?: string;
   middle_name?: string;
-  notification_preferences: NotificationPreferences;
-  oauth_providers: OAuthProviders;
-  permissions: UserPermissions;
+  notification_preferences: INotificationPreferences;
+  oauth_providers: IOAuthProviders;
+  permissions: IUserPermissions;
   phone_number?: string;
   phone_number_verified: boolean;
   picture?: string;
@@ -56,4 +57,23 @@ export interface User {
   website?: string;
   reset_password_token?: string;
   reset_token_expires_at?: Date;
+}
+
+export interface IDataStoredInToken {
+  iss: string;
+  sub: string;
+  exp: number;
+  iat: number;
+  email: string;
+  family_name: string;
+  favorite_count?: number;
+  given_name: string;
+  languages: string[];
+  middle_name?: string;
+  picture?: string;
+  username: string;
+}
+
+export interface IRequestWithUser extends Request {
+  user: IUser;
 }

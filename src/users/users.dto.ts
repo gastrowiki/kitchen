@@ -1,5 +1,5 @@
 import { IsEmail, IsString, MinLength, IsNotEmpty, Matches } from 'class-validator';
-import { IsEqualTo } from './isEqualTo.validator';
+import { IsEqualTo } from 'common/utils/validators';
 
 export class CreateUserDto {
   @IsString()

@@ -1,13 +1,12 @@
-import { sign } from 'jsonwebtoken';
+import isEmpty from 'lodash/isEmpty';
 import { createHash } from 'crypto';
+import { sign } from 'jsonwebtoken';
 
-import * as UserModal from '@models/user.model';
-import { DataStoredInToken } from '@interfaces/auth.interface';
-import { HttpException } from '@exceptions/HttpException';
-import { LoginUserDto, ResetPasswordDto } from '@dtos/users.dto';
-import { TOP_PASSWORDS } from '@utils/password';
-import { User } from '@interfaces/user.interface';
-import { isEmpty } from '@utils/util';
+import * as UserModal from './users.model';
+import TOP_PASSWORDS from './enums/TOP_PASSWORDS';
+import { HttpException } from 'common';
+import { IDataStoredInToken, IUser } from 'common/types';
+import { LoginUserDto, ResetPasswordDto } from './users.dto';
 
 export const signup = async (userData: UserModal.ICreatePayload) => {
   // most of the validation is done in users.dto.ts
@@ -29,19 +28,23 @@ export const login = async (userData: LoginUserDto) => {
   return { token, user };
 };
 
-const createToken = (user: User) => {
-  const secretKey = process.env.AUTH_SECRET;
+const createToken = (user: IUser) => {
+  const secretKey = process.env.JWT_SECRET;
   const expirationDate = new Date();
   expirationDate.setDate(expirationDate.getDate() + 1); // 1 day
-  const dataStoredInToken: DataStoredInToken = {
+  const dataStoredInToken: IDataStoredInToken = {
     iss: 'gastro.wiki',
+    sub: user.id,
     exp: expirationDate.getTime(),
     iat: new Date().getTime(),
-    given_name: user.given_name,
+    email: user.email,
     family_name: user.family_name,
-    preferred_username: user.username,
-    sub: user.id,
+    favorite_count: user.favorite_count,
+    given_name: user.given_name,
     languages: user.languages,
+    middle_name: user.middle_name,
+    picture: user.picture,
+    username: user.username,
   };
   return sign(dataStoredInToken, secretKey);
 };
@@ -73,7 +76,7 @@ export const resetPassword = async ({ email, password, token }: ResetPasswordDto
   if (TOP_PASSWORDS.includes(password)) {
     throw new HttpException(422, 'Password is too common', { password: 'Password is too common' });
   }
-  const user = await UserModal.findFullUserByEmail(email);
+  const user = await UserModal.findByEmail(email);
   if (!user || token !== user.reset_password_token) throw new HttpException(404, 'This reset link is not valid. Try again.');
   const expiredToken = new Date().getTime() > user.reset_token_expires_at.getTime();
   if (expiredToken) throw new HttpException(409, 'This reset link is expired. Try again.');

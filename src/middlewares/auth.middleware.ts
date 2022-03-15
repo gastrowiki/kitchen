@@ -2,14 +2,14 @@ import passport from 'passport';
 import { Request } from 'express';
 import { Strategy as JwtStrategy } from 'passport-jwt';
 
-import * as UserModel from '@models/user.model';
-import { DataStoredInToken } from '@interfaces/auth.interface';
+import * as UserModel from 'users/users.model';
+import { IDataStoredInToken } from 'common/types';
 
 const jwtFromRequest = (req: Request) => {
   if (req.cookies.Authorization) {
     return req.cookies.Authorization;
   }
-  const authorization = req.headers.authorization;
+  const authorization = req.headers.authorization as string;
   if (authorization && authorization.split(' ')[0] === 'Bearer') {
     return authorization.split(' ')[1];
   }
@@ -20,11 +20,11 @@ passport.use(
   new JwtStrategy(
     {
       jwtFromRequest,
-      secretOrKey: process.env.AUTH_SECRET,
+      secretOrKey: process.env.JWT_SECRET,
       issuer: 'gastro.wiki',
       ignoreExpiration: true,
     },
-    async (jwt_payload: DataStoredInToken, done) => {
+    async (jwt_payload: IDataStoredInToken, done) => {
       try {
         const user = await UserModel.findById(jwt_payload.sub);
         return done(null, user || false);

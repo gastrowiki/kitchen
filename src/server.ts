@@ -1,10 +1,7 @@
 import 'dotenv/config';
-import '@/index';
-import App from '@/app';
-import validateEnv from '@utils/validateEnv';
+import 'index';
+import { startApp } from 'app';
+import validateEnv from 'common/utils/validateEnv';
 
 validateEnv();
-
-const app = new App();
-
-app.listen();
+startApp();
